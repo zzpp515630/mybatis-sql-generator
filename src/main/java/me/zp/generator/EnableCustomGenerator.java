@@ -28,4 +28,6 @@ public @interface EnableCustomGenerator {
     boolean isDataBase() default true;
 
     boolean isFile() default false;
+
+    boolean isConnection() default true;
 }

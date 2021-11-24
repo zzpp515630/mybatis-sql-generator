@@ -114,22 +114,26 @@ public class ReverseGeneration {
             // 用于存新增表的字段 迭代出所有model的所有fields存到newFieldList中
             List<CommonColumn> newFieldList = resolveEntity.tableFieldsConstruct(aClass);
 
-            // 先查该表是否以存在
-            int exist = sqlSessionService.getMapper(SqlGeneratorMapper.class).findTableCountByTableName(tableName);
+            if (GeneratorConfiguration.IS_CONNECTION) {
+                // 先查该表是否以存在
+                int exist = sqlSessionService.getMapper(SqlGeneratorMapper.class).findTableCountByTableName(tableName);
 
-            // 不存在时
-            if (exist == 0) {
+                // 不存在时
+                if (exist == 0) {
+                    NEW_TABLE_LIST.add(CommonField.builder().tableName(tableName).remarks(tableRemarks).columnList(newFieldList).build());
+                    continue;
+                }
+                // 已存在时理论上做修改的操作，这里查出该表的结构
+                List<String> columnNames = sqlSessionService.getMapper(SqlGeneratorMapper.class).findTableEnsembleByTableName(tableName);
+                // 验证对比从model中解析的fieldList与从数据库查出来的columnList
+                // 1. 找出增加的字段
+                List<CommonColumn> addFieldList = resolveEntity.buildAddFields(columnNames, newFieldList);
+                //如果有值则添加map
+                if (!CollectionUtils.isEmpty(addFieldList)) {
+                    ADD_TABLE_LIST.add(CommonField.builder().tableName(tableName).remarks(tableRemarks).columnList(addFieldList).build());
+                }
+            } else {
                 NEW_TABLE_LIST.add(CommonField.builder().tableName(tableName).remarks(tableRemarks).columnList(newFieldList).build());
-                continue;
-            }
-            // 已存在时理论上做修改的操作，这里查出该表的结构
-            List<String> columnNames = sqlSessionService.getMapper(SqlGeneratorMapper.class).findTableEnsembleByTableName(tableName);
-            // 验证对比从model中解析的fieldList与从数据库查出来的columnList
-            // 1. 找出增加的字段
-            List<CommonColumn> addFieldList = resolveEntity.buildAddFields(columnNames, newFieldList);
-            //如果有值则添加map
-            if (!CollectionUtils.isEmpty(addFieldList)) {
-                ADD_TABLE_LIST.add(CommonField.builder().tableName(tableName).remarks(tableRemarks).columnList(addFieldList).build());
             }
         }
     }
@@ -139,7 +143,7 @@ public class ReverseGeneration {
      * 根据传入的map创建或修改表结构
      */
     private void createOrModifyTableConstruct() {
-        if (!GeneratorConfiguration.IS_SQL_DB) {
+        if (!GeneratorConfiguration.IS_SQL_DB || !GeneratorConfiguration.IS_CONNECTION) {
             return;
         }
         // 1. 创建表

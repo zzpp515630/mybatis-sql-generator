@@ -48,6 +48,11 @@ public class GeneratorConfiguration implements ImportBeanDefinitionRegistrar {
      */
     public static boolean IS_SQL_DB;
 
+    /**
+     * 是否连接数据库
+     */
+    public static boolean IS_CONNECTION;
+
 
     @Override
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
@@ -59,6 +64,7 @@ public class GeneratorConfiguration implements ImportBeanDefinitionRegistrar {
         conversionPath(packageName);
         GeneratorConfiguration.IS_SQL_DB = (boolean) annotationAttributes.get("isDataBase");
         GeneratorConfiguration.IS_SQL_FILE = (boolean) annotationAttributes.get("isFile");
+        GeneratorConfiguration.IS_CONNECTION = (boolean) annotationAttributes.get("isConnection");
 
 
         ClassPathBeanDefinitionScanner scanner = new ClassPathBeanDefinitionScanner(registry, false);

@@ -73,9 +73,9 @@ public class ColumnSql {
         stringBuilder.append(" ");
         //备注
         if (StringUtils.isNotBlank(column.getRemarks())) {
-            stringBuilder.append("COMMENT").append(" ").append("\"").append(column.getRemarks()).append("\"");
+            stringBuilder.append("COMMENT").append(" ").append("'").append(column.getRemarks()).append("'");
         } else {
-            stringBuilder.append("COMMENT").append(" ").append("\"\"");
+            stringBuilder.append("COMMENT").append(" ").append("''");
         }
         return stringBuilder.toString();
     }
