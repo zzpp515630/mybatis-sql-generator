@@ -92,4 +92,16 @@
             </plugin>
         </plugins>
     </build>
+    <distributionManagement>
+        <repository>
+            <id>my-nexus</id>
+            <name>MDW Release Repository</name>
+            <url>http://150.158.153.103:19502/repository/maven-public/</url>
+        </repository>
+        <snapshotRepository>
+            <id>my-nexus-snapshots</id>
+            <name>MDW Snapshot Repository</name>
+            <url>http://150.158.153.103:19502/repository/maven-snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
 </project>
