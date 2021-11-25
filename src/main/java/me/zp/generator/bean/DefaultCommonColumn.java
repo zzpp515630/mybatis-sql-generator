@@ -3,6 +3,7 @@ package me.zp.generator.bean;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 /**
@@ -17,5 +18,6 @@ import lombok.experimental.SuperBuilder;
 @Data
 @NoArgsConstructor
 @SuperBuilder
+@ToString
 public class DefaultCommonColumn extends CommonColumn {
 }

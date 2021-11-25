@@ -9,14 +9,13 @@ import me.zp.generator.bean.CommonColumn;
 import me.zp.generator.bean.DefaultCommonColumn;
 import me.zp.generator.utils.NameConversionUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 描述：
@@ -65,13 +64,13 @@ public class ResolveEntity {
      * @throws IllegalAccessException
      */
     public List<CommonColumn> tableFieldsConstruct(Class<?> aClass) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
-        List<CommonColumn> newFieldList = new ArrayList<>();
+        Set<CommonColumn> newFieldList = new HashSet<>();
         // 判断是否有父类，如果有拉取父类的field，这里只支持多层继承
         Field[] fields = recursionParents(aClass, aClass.getDeclaredFields());
         for (Field field : fields) {
             resolveEntity(aClass, field, newFieldList);
         }
-        return newFieldList;
+        return new ArrayList<>(newFieldList);
     }
 
 
@@ -82,13 +81,13 @@ public class ResolveEntity {
      * @param columnNames  从sysColumns中取出我们需要比较的列的List
      */
     public List<CommonColumn> buildAddFields(List<String> columnNames, List<CommonColumn> newFieldList) {
-        List<CommonColumn> addFieldList = new ArrayList<>();
+        Set<CommonColumn> addFieldList = new HashSet<>();
         for (CommonColumn commonColumn : newFieldList) {
             if (!this.isExistField(columnNames, commonColumn)) {
                 addFieldList.add(commonColumn);
             }
         }
-        return addFieldList;
+        return new ArrayList<>(addFieldList);
     }
 
     /**
@@ -124,7 +123,7 @@ public class ResolveEntity {
     }
 
 
-    private void resolveEntity(Class<?> aClass, Field field, List<CommonColumn> newFieldList) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+    private void resolveEntity(Class<?> aClass, Field field, Set<CommonColumn> newFieldList) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
         Column column = field.getAnnotation(Column.class);
         // 注解，不需要的字段
         if (column != null && column.isIgnore()) {
@@ -221,25 +220,25 @@ public class ResolveEntity {
 
 
     public CommonColumn getCommonColumn(Field field) {
-        String name = field.getType().getName();
-        DefaultCommonColumn defaultCommonColumn = fieldCommonMap.get(name);
-        if (null == defaultCommonColumn) {
-            defaultCommonColumn = commonColumnMap.get(name);
+        DefaultCommonColumn defaultCommonColumn = commonColumnMap.get(field.getType().getName());
+        DefaultCommonColumn fieldCommon = fieldCommonMap.get(field.getName());
+        if (null == fieldCommon) {
+            fieldCommon = new DefaultCommonColumn();
         }
-        if(null == defaultCommonColumn){
+        if (null == defaultCommonColumn) {
             defaultCommonColumn = commonColumnMap.get("java.lang.String");
         }
         DefaultCommonColumn commonColumn = DefaultCommonColumn.builder().build();
-        commonColumn.setLength(defaultCommonColumn.getLength());
-        commonColumn.setAutoIncrement(defaultCommonColumn.isAutoIncrement());
-        commonColumn.setDecimalLength(defaultCommonColumn.getDecimalLength());
-        commonColumn.setDefaultValue(defaultCommonColumn.getDefaultValue());
-        commonColumn.setKey(defaultCommonColumn.isKey());
-        commonColumn.setName(defaultCommonColumn.getName());
-        commonColumn.setNullValue(defaultCommonColumn.isNullValue());
-        commonColumn.setRemarks(defaultCommonColumn.getRemarks());
-        commonColumn.setSort(defaultCommonColumn.getSort());
-        commonColumn.setType(defaultCommonColumn.getType());
+        commonColumn.setLength(Optional.ofNullable(fieldCommon.getLength()).orElse(defaultCommonColumn.getLength()));
+        commonColumn.setDecimalLength(Optional.ofNullable(fieldCommon.getDecimalLength()).orElse(defaultCommonColumn.getDecimalLength()));
+        commonColumn.setDefaultValue(Optional.ofNullable(fieldCommon.getDefaultValue()).orElse(defaultCommonColumn.getDefaultValue()));
+        commonColumn.setName(Optional.ofNullable(fieldCommon.getName()).orElse(defaultCommonColumn.getName()));
+        commonColumn.setRemarks(Optional.ofNullable(fieldCommon.getRemarks()).orElse(defaultCommonColumn.getRemarks()));
+        commonColumn.setSort(Optional.ofNullable(fieldCommon.getSort()).orElse(defaultCommonColumn.getSort()));
+        commonColumn.setType(Optional.ofNullable(fieldCommon.getType()).orElse(defaultCommonColumn.getType()));
+        commonColumn.setAutoIncrement(BooleanUtils.isTrue(fieldCommon.isAutoIncrement()));
+        commonColumn.setKey(BooleanUtils.isTrue(fieldCommon.isKey()));
+        commonColumn.setNullValue(BooleanUtils.isTrue(fieldCommon.isNullValue()));
         return commonColumn;
     }
 

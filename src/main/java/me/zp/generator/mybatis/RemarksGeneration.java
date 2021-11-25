@@ -2,6 +2,7 @@ package me.zp.generator.mybatis;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -82,8 +83,17 @@ public class RemarksGeneration {
      */
     private static class RegularFieldsRemark implements FieldsRemark {
 
-        private final String rex_con_ann = "/\\*\\*\\r\\n\\s*\\*\\s*(.*)\\r\\n.*\\r\\n.*\\r\\n\\s*private\\s.*\\s(.*);";
-        private final String rex = "/\\*\\*\\r\\n\\s*\\*\\s*(.*)\\r\\n.*\\r\\n\\s*private\\s.*\\s(.*);";
+//        private final String rex_con_ann = "/\\*\\*\\r\\n\\s*\\*\\s*(.*)\\r\\n.*\\r\\n.*\\r\\n\\s*private\\s.*\\s(.*);";
+//        private final String rex = "/\\*\\*\\r\\n\\s*\\*\\s*(.*)\\r\\n.*\\r\\n\\s*private\\s.*\\s(.*);";
+//        private final String rex_one = "/\\*\\*\\s*\\*\\s*(.*).*\\s*.*\\s*private\\s.*\\s(.*);";
+
+        private final List<String> rexs = Arrays.asList(
+                "/\\*\\*\\r\\n\\s*\\*\\s*(.*)\\r\\n.*\\r\\n.*\\r\\n\\s*private\\s.*\\s(.*);",
+                "/\\*\\*\\r\\n\\s*\\*\\s*(.*)\\r\\n.*\\r\\n.*\\r\\n\\s*private\\s.*\\s(.*);",
+                "/\\*\\*\\s*\\*\\s*(.*).*\\s*.*\\s*private\\s.*\\s(.*);",
+                "/\\*\\*\\s*\\*\\s*(.*)\\s*.*\\s*private\\s.*\\s(.*);",
+                "/\\*\\*\\s*\\*\\s*(.*)\\s*.*\\s*.*\\s*private\\s.*\\s(.*);"
+        );
 
         private String content;
 
@@ -98,32 +108,16 @@ public class RemarksGeneration {
         @Override
         public Map<String, String> getRemark() {
             Map<String, String> chl = new HashMap<>(16);
-            List<String> matchConAnn = match(rex_con_ann);
-            for (String str : matchConAnn) {
-                String remark = str.replaceAll(rex_con_ann, "$1");
-                String field = str.replaceAll(rex_con_ann, "$2");
-                chl.put(field.trim(), remark.trim());
-            }
-
-            List<String> match = match(rex);
-            for (String str : match) {
-                String remark = str.replaceAll(rex, "$1");
-                String field = str.replaceAll(rex, "$2");
-                chl.put(field.trim(), remark.trim());
+            for (String rex : rexs) {
+                List<String> matchConAnn = match(rex, content);
+                for (String str : matchConAnn) {
+                    String remark = str.replaceAll(rex, "$1");
+                    String field = str.replaceAll(rex, "$2");
+                    chl.put(field.trim(), remark.trim());
+                }
             }
             return chl;
         }
-
-        private List<String> match(String regex) {
-            List<String> matchData = new ArrayList<>();
-            Pattern pattern = Pattern.compile(regex);
-            Matcher matcher = pattern.matcher(content);
-            while (matcher.find()) {
-                matchData.add(matcher.group());
-            }
-            return matchData;
-        }
-
     }
 
     /**
@@ -241,7 +235,10 @@ public class RemarksGeneration {
 
     private static class RegularTableName implements TableRemark {
 
-        private final String rex_con_ann = "\\/\\*\\*(.*\\n)*public";
+        private final List<String> rexs = Arrays.asList(
+                "/\\*\\*(.*\\r\\n)*public",
+                "/\\*\\*(.*\\n)*public"
+        );
 
         /**
          * 实体地址
@@ -267,25 +264,41 @@ public class RemarksGeneration {
             }
             try (InputStream inputStream = new FileInputStream(file)) {
                 String stringList = IOUtils.toString(inputStream, "utf-8");
-                Pattern pattern = Pattern.compile(rex_con_ann);
-                Matcher matcher = pattern.matcher(stringList);
-                if (matcher.find()) {
-                    String group = matcher.group();
-                    return group
-                            .replaceAll("\\@.*", "")
-                            .replace("public", "")
-                            .replace("\\/", "")
-                            .replace("\\*", "")
-                            .replace("\t", "")
-                            .replace("\r", "")
-                            .replace("\n", "")
-                            .replace("类", "表");
-
+                String name = "";
+                for (String rex : rexs) {
+                    Pattern pattern = Pattern.compile(rex);
+                    Matcher matcher = pattern.matcher(stringList);
+                    if (matcher.find()) {
+                        String group = matcher.group();
+                        name = group
+                                .replaceAll("\\@.*", "")
+                                .replace("public", "")
+                                .replaceAll("\\/", "")
+                                .replaceAll("\\*", "")
+                                .replaceAll("\t", "")
+                                .replaceAll("\r", "")
+                                .replaceAll("\n", "")
+                                .replace("类", "表")
+                                .trim();
+                        if (StringUtils.isNotBlank(name)) {
+                            return name;
+                        }
+                    }
                 }
             } catch (IOException e) {
                 log.error(e.getMessage(), e);
             }
             return "";
         }
+    }
+
+    private static List<String> match(String regex, String content) {
+        List<String> matchData = new ArrayList<>();
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(content);
+        while (matcher.find()) {
+            matchData.add(matcher.group());
+        }
+        return matchData;
     }
 }

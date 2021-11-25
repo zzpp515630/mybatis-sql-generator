@@ -2,6 +2,7 @@ package me.zp.generator.bean;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 /**
@@ -10,6 +11,7 @@ import lombok.experimental.SuperBuilder;
 @Data
 @NoArgsConstructor
 @SuperBuilder
+@ToString
 public abstract class CommonColumn {
 
     /**
@@ -20,7 +22,7 @@ public abstract class CommonColumn {
     /**
      * 字段长度
      */
-    private int length;
+    private Integer length;
 
     /**
      * 字段名
@@ -62,7 +64,7 @@ public abstract class CommonColumn {
     /**
      * 排序
      */
-    private int sort;
+    private Integer sort;
 
 
 
