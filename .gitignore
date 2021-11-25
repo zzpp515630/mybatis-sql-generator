@@ -30,3 +30,5 @@ application*.properties
 .cache
 *.tgz
 *.log
+/.idea/
+/target/
