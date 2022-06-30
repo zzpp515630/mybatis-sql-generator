@@ -53,6 +53,8 @@ public class GeneratorConfiguration implements ImportBeanDefinitionRegistrar {
      */
     public static boolean IS_CONNECTION;
 
+    private static boolean run = true;
+
 
     @Override
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
@@ -62,24 +64,27 @@ public class GeneratorConfiguration implements ImportBeanDefinitionRegistrar {
         String[] paths = (String[]) entityPackages;
         String packageName = paths[0];
         conversionPath(packageName);
-        GeneratorConfiguration.IS_SQL_DB = (boolean) annotationAttributes.get("isDataBase");
-        GeneratorConfiguration.IS_SQL_FILE = (boolean) annotationAttributes.get("isFile");
-        GeneratorConfiguration.IS_CONNECTION = (boolean) annotationAttributes.get("isConnection");
-
-
-        ClassPathBeanDefinitionScanner scanner = new ClassPathBeanDefinitionScanner(registry, false);
-        scanner.addIncludeFilter(new AnnotationTypeFilter(Service.class));
-        scanner.addIncludeFilter(new AnnotationTypeFilter(Autowired.class));
-        scanner.addIncludeFilter(new AnnotationTypeFilter(Component.class));
-        scanner.addIncludeFilter(new AnnotationTypeFilter(Mapper.class));
-        scanner.scan("me.zp.generator");
-
+        if(run){
+            GeneratorConfiguration.IS_SQL_DB = (boolean) annotationAttributes.get("isDataBase");
+            GeneratorConfiguration.IS_SQL_FILE = (boolean) annotationAttributes.get("isFile");
+            GeneratorConfiguration.IS_CONNECTION = (boolean) annotationAttributes.get("isConnection");
+            ClassPathBeanDefinitionScanner scanner = new ClassPathBeanDefinitionScanner(registry, false);
+            scanner.addIncludeFilter(new AnnotationTypeFilter(Service.class));
+            scanner.addIncludeFilter(new AnnotationTypeFilter(Autowired.class));
+            scanner.addIncludeFilter(new AnnotationTypeFilter(Component.class));
+            scanner.addIncludeFilter(new AnnotationTypeFilter(Mapper.class));
+            scanner.scan("me.zp.generator");
+        }
     }
 
 
     public static void conversionPath(String packageName) {
         PACKAGE_PATH = packageName;
         String path = EnableCustomGenerator.class.getResource("/").getPath();
+        if(!path.contains("target")){
+            run = false;
+            return;
+        }
         SOURCE_PATH = path.substring(0, path.indexOf("target"));
         SOURCE_ENTITY_PATH = SOURCE_PATH + "src/main/java/" + PACKAGE_PATH.replace(".", "/") + "/";
     }
